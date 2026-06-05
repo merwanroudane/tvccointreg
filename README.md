@@ -1,6 +1,13 @@
 # tvccointreg
 
+[![PyPI version](https://img.shields.io/pypi/v/tvccointreg.svg)](https://pypi.org/project/tvccointreg/)
+[![Python versions](https://img.shields.io/pypi/pyversions/tvccointreg.svg)](https://pypi.org/project/tvccointreg/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/merwanroudane/tvccointreg/blob/main/LICENSE)
+[![CI](https://github.com/merwanroudane/tvccointreg/actions/workflows/ci.yml/badge.svg)](https://github.com/merwanroudane/tvccointreg/actions/workflows/ci.yml)
+
 **Time-Varying-Coefficient regression and Generalized Cointegration in Python.**
+
+📦 **PyPI:** https://pypi.org/project/tvccointreg/ — install with `pip install tvccointreg`
 
 `tvccointreg` implements the *generalized cointegration* framework of
 
@@ -48,14 +55,21 @@ not necessarily unit-root**. `tvccointreg` lets you:
 
 ## Installation
 
+From [PyPI](https://pypi.org/project/tvccointreg/):
+
 ```bash
-# from a clone of the repo
+pip install tvccointreg
+
+# with the optional ADF stationarity diagnostic
+pip install "tvccointreg[adf]"
+```
+
+Or from source:
+
+```bash
 git clone https://github.com/merwanroudane/tvccointreg.git
 cd tvccointreg
-pip install -e .
-
-# with the optional ADF / test extras
-pip install -e ".[dev]"
+pip install -e ".[dev]"      # editable install with test extras
 ```
 
 Requirements: `numpy`, `scipy`, `pandas`, `matplotlib`. `statsmodels` is optional
