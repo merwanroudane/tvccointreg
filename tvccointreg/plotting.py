@@ -37,6 +37,29 @@ def _line_colors(n: int):
     return cols[:n]
 
 
+def _positions(idx):
+    """Return integer x positions and (is_numeric, idx) for tick labelling."""
+    arr = np.asarray(idx)
+    is_numeric = np.issubdtype(arr.dtype, np.number)
+    return np.arange(len(arr)), is_numeric, arr
+
+
+def _set_time_axis(ax, idx, n_ticks: int = 8):
+    """
+    Put a clean, sparse time axis on ``ax``.
+
+    Works whether the model index is numeric or string/date labels (e.g.
+    '1959Q2'); avoids cramming hundreds of tick labels onto the axis.
+    """
+    pos, is_numeric, arr = _positions(idx)
+    T = len(arr)
+    if is_numeric:
+        return  # numeric x already plotted against real values
+    locs = np.linspace(0, T - 1, min(n_ticks, T)).astype(int)
+    ax.set_xticks(locs)
+    ax.set_xticklabels([str(arr[i]) for i in locs], rotation=0)
+
+
 def plot_coefficients(res, regressors: Optional[Sequence] = None,
                       ci: float = 0.95, include_random: bool = False,
                       ncols: int = 2, figsize=None, cmap: str = "parula"):
@@ -64,6 +87,8 @@ def plot_coefficients(res, regressors: Optional[Sequence] = None,
     se = res.coefficient_se()
     bf = res.bias_free_coefficients()
     idx = res.model.index
+    pos, is_numeric, _ = _positions(idx)
+    x = idx if is_numeric else pos
     z = stats.norm.ppf(0.5 + ci / 2)
 
     n = len(regressors)
@@ -79,17 +104,18 @@ def plot_coefficients(res, regressors: Optional[Sequence] = None,
             c = colors[k % len(colors)]
             lo = gamma[name] - z * se[name]
             hi = gamma[name] + z * se[name]
-            ax.fill_between(idx, lo, hi, color=c, alpha=0.18,
+            ax.fill_between(x, lo, hi, color=c, alpha=0.18,
                             label=f"{int(ci*100)}% CI")
-            ax.plot(idx, gamma[name], color=c, lw=1.8, label=r"$\gamma_{jt}$")
-            ax.plot(idx, bf[name], color="#222222", lw=1.1, ls="--",
+            ax.plot(x, gamma[name], color=c, lw=1.8, label=r"$\gamma_{jt}$")
+            ax.plot(x, bf[name], color="#222222", lw=1.1, ls="--",
                     label="bias-free")
             if include_random:
-                ax.plot(idx, gamma_full[name], color=c, lw=0.8, alpha=0.5,
+                ax.plot(x, gamma_full[name], color=c, lw=0.8, alpha=0.5,
                         label=r"$\gamma_{jt}+\hat\varepsilon$")
             ax.axhline(0, color="grey", lw=0.6)
             ax.set_title(f"Coefficient on {name}")
             ax.set_xlabel("t")
+            _set_time_axis(ax, idx)
             ax.legend(fontsize=8, framealpha=0.9, loc="best")
         # hide any empty panels
         for k in range(n, nrows * ncols):
@@ -107,25 +133,28 @@ def plot_decomposition(res, regressor: Union[str, int], figsize=(8, 4.6),
     comp = res.components(regressor)
     name = regressor if isinstance(regressor, str) else res.model.coef_names[regressor]
     idx = res.model.index
+    pos, is_numeric, _ = _positions(idx)
+    x = idx if is_numeric else pos
     cols = parula_colors(6)
 
     with _style():
         fig, ax = plt.subplots(figsize=figsize)
-        ax.plot(idx, comp["total"], color="#111111", lw=2.0, label="total")
-        ax.plot(idx, comp["bias_free"], color=cols[0], lw=1.6,
+        ax.plot(x, comp["total"], color="#111111", lw=2.0, label="total")
+        ax.plot(x, comp["bias_free"], color=cols[0], lw=1.6,
                 label="bias-free (structural)")
         if np.any(comp["omitted_bias"] != 0):
-            ax.plot(idx, comp["omitted_bias"], color=cols[2], lw=1.3, ls="--",
+            ax.plot(x, comp["omitted_bias"], color=cols[2], lw=1.3, ls="--",
                     label="omitted-variable bias")
         if np.any(comp["measurement_bias"] != 0):
-            ax.plot(idx, comp["measurement_bias"], color=cols[4], lw=1.3,
+            ax.plot(x, comp["measurement_bias"], color=cols[4], lw=1.3,
                     ls=":", label="measurement-error bias")
-        ax.plot(idx, comp["random"], color="grey", lw=0.8, alpha=0.6,
+        ax.plot(x, comp["random"], color="grey", lw=0.8, alpha=0.6,
                 label="random part")
         ax.axhline(0, color="grey", lw=0.6)
         ax.set_title(f"Coefficient decomposition: {name}")
         ax.set_xlabel("t")
         ax.set_ylabel("coefficient")
+        _set_time_axis(ax, idx)
         ax.legend(fontsize=8, ncol=2, framealpha=0.9)
         fig.tight_layout()
     return fig
@@ -136,22 +165,25 @@ def plot_fit(res, figsize=(9, 5.2)):
     import matplotlib.pyplot as plt
 
     idx = res.model.index
+    pos, is_numeric, _ = _positions(idx)
+    x = idx if is_numeric else pos
     y = res.model.y
     cols = parula_colors(4)
     with _style():
         fig, (ax1, ax2) = plt.subplots(
             2, 1, figsize=figsize, sharex=True,
             gridspec_kw={"height_ratios": [3, 1]})
-        ax1.plot(idx, y, color="#111111", lw=1.4, label="actual")
-        ax1.plot(idx, res.fitted, color=cols[1], lw=1.6, ls="--",
+        ax1.plot(x, y, color="#111111", lw=1.4, label="actual")
+        ax1.plot(x, res.fitted, color=cols[1], lw=1.6, ls="--",
                  label="fitted")
         ax1.set_title("Model fit")
         ax1.set_ylabel(res.model.y_name)
         ax1.legend(fontsize=9)
-        ax2.plot(idx, res.resid, color=cols[2], lw=1.0)
+        ax2.plot(x, res.resid, color=cols[2], lw=1.0)
         ax2.axhline(0, color="grey", lw=0.6)
         ax2.set_ylabel("residual")
         ax2.set_xlabel("t")
+        _set_time_axis(ax2, idx)
         fig.tight_layout()
     return fig
 
@@ -175,11 +207,14 @@ def plot_coint_heatmap(res, figsize=None, cmap: str = "parula"):
     with _style():
         fig, ax = plt.subplots(figsize=figsize)
         im = ax.imshow(M, aspect="auto", cmap=get_cmap(cmap),
-                       vmin=-vmax, vmax=vmax,
-                       extent=[float(idx[0]), float(idx[-1]),
-                               len(names) - 0.5, -0.5])
+                       vmin=-vmax, vmax=vmax, interpolation="nearest")
         ax.set_yticks(range(len(names)))
         ax.set_yticklabels(names)
+        # sparse time ticks (handles numeric or string/date indices)
+        arr = np.asarray(idx)
+        locs = np.linspace(0, len(arr) - 1, min(8, len(arr))).astype(int)
+        ax.set_xticks(locs)
+        ax.set_xticklabels([str(arr[i]) for i in locs])
         ax.set_xlabel("t")
         ax.set_title("Bias-free (structural) coefficient over time")
         ax.grid(False)

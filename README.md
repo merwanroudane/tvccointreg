@@ -8,6 +8,7 @@
 **Time-Varying-Coefficient regression and Generalized Cointegration in Python.**
 
 📦 **PyPI:** https://pypi.org/project/tvccointreg/ — install with `pip install tvccointreg`
+🌐 **Documentation site:** https://merwanroudane.github.io/tvccointreg/
 
 `tvccointreg` implements the *generalized cointegration* framework of
 
@@ -386,6 +387,23 @@ Run it yourself:
 ```bash
 python examples/real_data_consumption.py
 ```
+
+### Multiple regressors
+
+The framework handles **several regressors at once** — each gets its own
+time-varying coefficient and its own cointegration verdict.
+`examples/consumption_multivariate.py` estimates a two-regressor consumption
+function (disposable income **and** the real interest rate) on the same data:
+
+| Regressor | Bias-free coef | t | Wald | p-value | Cointegrated |
+|---|---|---|---|---|---|
+| log_realDPI (income) | 0.6666 *** | 10.13 | 111.40 | <0.0001 | **Yes** |
+| realint (real rate) | −0.0007 ** | −2.26 | 8.37 | 0.039 | **Yes** |
+
+Positive income elasticity (~0.67) and a negative real-rate effect
+(intertemporal substitution); R² = 0.9998, residuals stationary (ADF
+p = 3.5×10⁻⁹). See the rendered results on the
+[documentation site](https://merwanroudane.github.io/tvccointreg/#example).
 
 ---
 
