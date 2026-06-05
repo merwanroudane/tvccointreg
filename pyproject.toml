@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tvccointreg"
-version = "0.1.0"
+version = "0.1.1"
 description = "Time-Varying Coefficient regression and Generalized Cointegration (Hall, Swamy & Tavlas)"
 readme = "README.md"
 requires-python = ">=3.9"

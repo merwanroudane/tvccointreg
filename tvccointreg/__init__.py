@@ -47,7 +47,7 @@ from .colormaps import (
     get_cmap,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "Dr Merwan Roudane"
 __email__ = "merwanroudane920@gmail.com"
 
