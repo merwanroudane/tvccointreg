@@ -286,6 +286,95 @@ finds **no** structural relationship.
 
 ---
 
+## Empirical application: the US consumption function (real data)
+
+`examples/real_data_consumption.py` applies the method to **real US quarterly
+macro data** (`statsmodels` `macrodata`, 1959Q1–2009Q3, 202 obs after lagging).
+We model the long-run relationship between **real personal consumption** and
+**real disposable income** (both in logs, both strongly trending / I(1)):
+
+```python
+import numpy as np, pandas as pd
+from statsmodels.datasets import macrodata
+from tvccointreg import TVCModel, DriverSpec
+
+d = macrodata.load_pandas().data
+d.index = pd.period_range("1959Q1", periods=len(d), freq="Q")
+zscore = lambda s: (s - s.mean()) / s.std(ddof=0)
+
+y = np.log(d["realcons"]).rename("log_cons")
+X = np.log(d[["realdpi"]]).rename(columns={"realdpi": "log_inc"})
+drivers = pd.DataFrame({
+    "inc_lag":  zscore(np.log(d["realdpi"]).shift(1)),
+    "trend":    zscore(pd.Series(np.arange(len(d)), index=d.index)),
+    "realint":  zscore(d["realint"]),
+    "unemp":    zscore(d["unemp"]),
+    "cons_lag": zscore(np.log(d["realcons"]).shift(1)),
+})
+df = pd.concat([y, X, drivers], axis=1).dropna()
+
+spec = DriverSpec(
+    names=["inc_lag", "trend", "realint", "unemp", "cons_lag"],
+    bias_free=["inc_lag", "trend"],   # true elasticity variation
+    omitted=["realint", "unemp"],     # interest-rate / labour-market channels
+    measurement=["cons_lag"],         # dynamics / measurement
+)
+res = TVCModel(df["log_cons"], df[["log_inc"]], df[spec.names],
+               driver_spec=spec, index=df.index.astype(str)).fit()
+print(res.summary())
+print(res.coint_test())
+```
+
+**Result (verbatim output):**
+
+```
+==============================================================================
+      Time-Varying-Coefficient Regression  /  Generalized Cointegration
+==============================================================================
+Dep. variable: log_cons                No. observations: 202
+No. coefficients: 2                    No. drivers: 5
+Estimator: Iteratively rescaled GLS    Covariance: GLS
+R-squared: 0.9999                      Log-likelihood: 752.32
+Converged: True                        Resid ADF p-value: 0.0000
+==============================================================================
+Variable    Coef (mean)  Bias-free    Std.Err          t    p-value    G-Coint
+------------------------------------------------------------------------------
+log_inc          0.3886     0.3886     0.0528     7.3626     0.0000 ***     Yes
+==============================================================================
+```
+
+| regressor | avg_bias_free | std_err | t_stat | wald | df | p_value | cointegrated |
+|---|---|---|---|---|---|---|---|
+| log_inc | 0.3886 | 0.0528 | 7.3626 | 56.9504 | 3 | 0.0000 | **True** |
+
+**Reading the result.**
+
+- **Generalized cointegration is confirmed** between consumption and income
+  (Wald = 56.95, 3 df, *p* ≈ 0): the bias-free structural elasticity is firmly
+  nonzero, so the long-run relationship is genuine, not spurious.
+- **Standard inference is valid here**: the composite residuals are stationary
+  (ADF *p* = 1.9 × 10⁻⁷), exactly the condition under which Hall–Swamy–Tavlas
+  show the TVC test uses ordinary χ²/normal critical values rather than
+  Dickey–Fuller ones.
+- The **bias-free income elasticity drifts down over the sample**, from **0.43
+  (1959Q2)** to **0.34 (2009Q3)** — the *direct* income channel after the
+  dynamics (`cons_lag`) and omitted business-cycle conditions (`realint`,
+  `unemp`) are stripped out into the bias terms. A declining direct sensitivity
+  of consumption to current income over five decades is consistent with greater
+  consumption smoothing / financial deepening.
+
+| Bias-free income elasticity over time | Coefficient decomposition |
+|---|---|
+| ![mpc](docs/img/consumption_mpc.png) | ![decomp](docs/img/consumption_decomp.png) |
+
+Run it yourself:
+
+```bash
+python examples/real_data_consumption.py
+```
+
+---
+
 ## Testing
 
 ```bash
