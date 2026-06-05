@@ -261,9 +261,9 @@ All plots default to the MATLAB **Parula** colormap and return a matplotlib
 | | |
 |---|---|
 | `plot_coefficients()` | `plot_decomposition("x")` |
-| ![coefficients](docs/img/coefficients.png) | ![decomposition](docs/img/decomposition.png) |
+| ![coefficients](https://raw.githubusercontent.com/merwanroudane/tvccointreg/main/docs/img/coefficients.png) | ![decomposition](https://raw.githubusercontent.com/merwanroudane/tvccointreg/main/docs/img/decomposition.png) |
 | `plot_fit()` | `plot_coint_heatmap()` |
-| ![fit](docs/img/fit.png) | ![heatmap](docs/img/heatmap.png) |
+| ![fit](https://raw.githubusercontent.com/merwanroudane/tvccointreg/main/docs/img/fit.png) | ![heatmap](https://raw.githubusercontent.com/merwanroudane/tvccointreg/main/docs/img/heatmap.png) |
 
 ---
 
@@ -365,7 +365,7 @@ log_inc          0.3886     0.3886     0.0528     7.3626     0.0000 ***     Yes
 
 | Bias-free income elasticity over time | Coefficient decomposition |
 |---|---|
-| ![mpc](docs/img/consumption_mpc.png) | ![decomp](docs/img/consumption_decomp.png) |
+| ![mpc](https://raw.githubusercontent.com/merwanroudane/tvccointreg/main/docs/img/consumption_mpc.png) | ![decomp](https://raw.githubusercontent.com/merwanroudane/tvccointreg/main/docs/img/consumption_decomp.png) |
 
 Run it yourself:
 
@@ -385,6 +385,47 @@ pytest -q
 The suite checks coefficient recovery, that the three components sum exactly to
 the total coefficient, detection of genuine generalized cointegration, rejection
 of spurious relationships, and the Parula palette/colorscale helpers.
+
+---
+
+## Publishing (maintainer notes)
+
+The package is PyPI-ready (`python -m build` + `twine check` both pass).
+
+**First release — manual upload with an API token**
+
+1. Create accounts on [TestPyPI](https://test.pypi.org/) and
+   [PyPI](https://pypi.org/), and generate an API token for each
+   (Account settings → API tokens).
+2. Build and check:
+   ```bash
+   python -m build
+   python -m twine check dist/*
+   ```
+3. Dry-run on TestPyPI first, then install from there to confirm:
+   ```bash
+   python -m twine upload --repository testpypi dist/*
+   pip install --index-url https://test.pypi.org/simple/ \
+       --extra-index-url https://pypi.org/simple/ tvccointreg
+   ```
+4. Upload to the real PyPI:
+   ```bash
+   python -m twine upload dist/*
+   ```
+   When prompted, use `__token__` as the username and the API token (starting
+   with `pypi-`) as the password.
+
+**Subsequent releases — automated via Trusted Publishing (recommended)**
+
+`.github/workflows/publish.yml` publishes automatically when you publish a
+GitHub Release. One-time setup: on PyPI add a *Trusted Publisher*
+(Project → Publishing) for repository `merwanroudane/tvccointreg`, workflow
+`publish.yml`, environment `pypi`. After that, no tokens or secrets are needed —
+just bump `version` in `pyproject.toml` and `__version__`, tag, and publish a
+Release.
+
+> **Remember:** a version number can only be uploaded to PyPI **once**. Bump the
+> version for every release.
 
 ---
 
